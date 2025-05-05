@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  {% if object %}
+    <h1>Изменить транзакцию</h1>
+  {% else %}
+    <h1>Добавить транзакцию</h1>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="mb-3">
+      {{ form.date.label_tag }} {{ form.date }}
+    </div>
+
+    <div class="mb-3 d-flex align-items-center">
+      <div class="me-2 flex-grow-1">
+        {{ form.status.label_tag }} {{ form.status }}
+      </div>
+      <a href="{% url 'status-add' %}" class="btn btn-sm btn-outline-secondary me-1">Добавить статус</a>
+    </div>
+
+    <div class="mb-3 d-flex align-items-center">
+      <div class="me-2 flex-grow-1">
+        {{ form.type.label_tag }} {{ form.type }}
+      </div>
+      <a href="{% url 'type-add' %}" class="btn btn-sm btn-outline-secondary me-1">Добавить тип</a>
+    </div>
+
+    <div class="mb-3 d-flex align-items-center">
+      <div class="me-2 flex-grow-1">
+        {{ form.category.label_tag }} {{ form.category }}
+      </div>
+      <a href="{% url 'category-add' %}" class="btn btn-sm btn-outline-secondary me-1">Добавить категорию</a>
+    </div>
+
+    <div class="mb-3 d-flex align-items-center">
+      <div class="me-2 flex-grow-1">
+        {{ form.subcategory.label_tag }} {{ form.subcategory }}
+      </div>
+      <a href="{% url 'subcategory-add' %}" class="btn btn-sm btn-outline-secondary me-1">Добавить подкатегорию</a>
+    </div>
+
+    <div class="mb-3">
+      {{ form.amount.label_tag }} {{ form.amount }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.comment.label_tag }} {{ form.comment }}
+    </div>
+
+    {% if object %}
+      <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+    </form>
+      <form method="post" action="{% url 'transaction-delete' object.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Удалить транзакцию</button>
+      </form>
+    {% else %}
+      <button type="submit" class="btn btn-primary">Сохранить</button>
+    </form>
+    {% endif %}
+
+  <a href="{% url 'transaction-list' %}" class="btn btn-secondary mt-3">Назад к списку</a>
+  {% if not object %}
+    <a href="{% url 'transaction-add' %}" class="btn btn-success mt-3">Создать новую транзакцию</a>
+  {% endif %}
+
+  <script>
+    $("#id_type").change(function() {
+      $.ajax({
+        url: "{% url 'ajax_load_categories' %}",
+        data: { 'type': $(this).val() },
+        success: function(data) {
+          let select = $("#id_category");
+          select.empty().append('<option value="">---------</option>');
+          data.forEach(item => select.append(`<option value="${item.id}">${item.name}</option>`));
+          $("#id_subcategory").empty().append('<option value="">---------</option>');
+        }
+      });
+    });
+
+    $("#id_category").change(function() {
+      $.ajax({
+        url: "{% url 'ajax_load_subcategories' %}",
+        data: { 'category': $(this).val() },
+        success: function(data) {
+          let select = $("#id_subcategory");
+          select.empty().append('<option value="">---------</option>');
+          data.forEach(item => select.append(`<option value="${item.id}">${item.name}</option>`));
+        }
+      });
+    });
+  </script>
+{% endblock %}
