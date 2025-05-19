@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Объявление успешно создано</h2>
+  <ul class="list-group mt-3">
+    <li class="list-group-item"><strong>ID:</strong> {{ ad.id }}</li>
+    <li class="list-group-item"><strong>Заголовок:</strong> {{ ad.title }}</li>
+    <li class="list-group-item"><strong>Описание:</strong> {{ ad.description }}</li>
+    <li class="list-group-item"><strong>Категория:</strong> {{ ad.category }}</li>
+    <li class="list-group-item"><strong>Состояние:</strong> {{ ad.condition }}</li>
+    <li class="list-group-item"><strong>Дата публикации:</strong> {{ ad.created_at }}</li>
+  </ul>
+  <a href="{% url 'index' %}" class="btn btn-link mt-3">Вернуться на главную</a>
+{% endblock %}

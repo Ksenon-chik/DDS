@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<form method="get" class="row mb-3" xmlns:c.id xmlns:c.id>
+    <div class="col"><input type="text" name="q" value="{{ q }}" placeholder="Поиск..." class="form-control"></div>
+    <div class="col">
+      <select name="category" class="form-control">
+        <option value="">Все категории</option>
+        {% for c in categories %}
+          <option value="{{ c.id }}" {% if c.id|stringformat:"s" == selected_cat %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col">
+      <select name="condition" class="form-control">
+        <option value="">Все состояния</option>
+        <option value="new" {% if selected_cond == 'new' %}selected{% endif %}>Новый</option>
+        <option value="used" {% if selected_cond == 'used' %}selected{% endif %}>Б/У</option>
+      </select>
+    </div>
+    <div class="col"><button type="submit" class="btn btn-primary">Применить</button></div>
+  </form>
+
+  {% for item in items %}
+    <div class="card mb-2">
+      <div class="card-body">
+        <h5>{{ item.title }}</h5>
+        <p>{{ item.description }}</p>
+        <small>Категория: {{ item.category.name }}, Состояние: {{ item.condition }}</small>
+        {% if user == item.owner %}
+          <div class="mt-2">
+            <a href="{% url 'ad_update' item.pk %}" class="btn btn-sm btn-outline-secondary">Редактировать</a>
+            <a href="{% url 'ad_delete' item.pk %}" class="btn btn-sm btn-outline-danger">Удалить</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% empty %}
+    <p>Объявлений не найдено.</p>
+  {% endfor %}
+
+  <nav aria-label="Page navigation">
+    <ul class="pagination">
+      {% if items.has_previous %}
+        <li class="page-item"><a href="?page={{ items.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_cat %}&category={{ selected_cat }}{% endif %}{% if selected_cond %}&condition={{ selected_cond }}{% endif %}" class="page-link">«</a></li>
+      {% endif %}
+      <li class="page-item active"><span class="page-link">{{ items.number }} / {{ items.paginator.num_pages }}</span></li>
+      {% if items.has_next %}
+        <li class="page-item"><a href="?page={{ items.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_cat %}&category={{ selected_cat }}{% endif %}{% if selected_cond %}&condition={{ selected_cond }}{% endif %}" class="page-link">»</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endblock %}

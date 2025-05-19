@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Удалить объявление?</h2>
+  <p>Вы действительно хотите удалить объявление «{{ ad.title }}»?</p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Да, удалить</button>
+    <a href="{% url 'index' %}" class="btn btn-secondary">Отмена</a>
+  </form>
+{% endblock %}

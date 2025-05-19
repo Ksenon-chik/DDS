@@ -1,35 +1,26 @@
 from django import forms
-from .models import Transaction, Subcategory
-import datetime
+from .models import Item, ExchangeProposal
 
 
-class TransactionForm(forms.ModelForm):
-    date = forms.DateField(
-        widget=forms.DateInput(attrs={'type': 'date'}),
-        initial=datetime.date.today,
-    )
-
+class ItemForm(forms.ModelForm):
     class Meta:
-        model = Transaction
-        fields = ['date', 'status', 'type', 'category', 'subcategory', 'amount', 'comment']
+        model = Item
+        fields = ['title', 'description', 'category', 'condition']
         widgets = {
-            'status': forms.Select(attrs={'class': 'form-select'}),
-            'type': forms.Select(attrs={'class': 'form-select'}),
-            'category': forms.Select(attrs={'class': 'form-select'}),
-            'subcategory': forms.Select(attrs={'class': 'form-select'}),
-            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'image_url': forms.URLInput(attrs={'class': 'form-control'}),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'condition': forms.Select(attrs={'class': 'form-control'}),
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Изначально нет подкатегорий
-        self.fields['subcategory'].queryset = Subcategory.objects.none()
-        if 'category' in self.data:
-            try:
-                category_id = int(self.data.get('category'))
-                self.fields['subcategory'].queryset = Subcategory.objects.filter(category_id=category_id)
-            except (ValueError, TypeError):
-                pass
-        elif self.instance.pk:
-            self.fields['subcategory'].queryset = self.instance.category.subcategories
+
+class ExchangeProposalForm(forms.ModelForm):
+    class Meta:
+        model = ExchangeProposal
+        fields = ['ad_sender', 'ad_receiver', 'comment']
+        widgets = {
+            'ad_sender': forms.Select(attrs={'class': 'form-control'}),
+            'ad_receiver': forms.Select(attrs={'class': 'form-control'}),
+            'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }

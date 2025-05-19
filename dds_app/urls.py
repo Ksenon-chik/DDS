@@ -1,50 +1,24 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
-    # Transactions
-    TransactionListView,
-    TransactionCreateView,
-    TransactionUpdateView,
-    TransactionDeleteView,
-    load_categories,
-    load_subcategories,
-    # Status
-    StatusCreateView,
-    StatusUpdateView,
-    # Type
-    TypeCreateView,
-    TypeUpdateView,
-    # Category
-    CategoryCreateView,
-    CategoryUpdateView,
-    # Subcategory
-    SubcategoryCreateView,
-    SubcategoryUpdateView,
+    index,
+    ad_create,
+    proposal_create,
+    ad_update,
+    ad_delete,
+    ItemViewSet,
+    ExchangeProposalViewSet
 )
 
+router = DefaultRouter()
+router.register(r'items', ItemViewSet, basename='items')
+router.register(r'proposals', ExchangeProposalViewSet, basename='proposals')
+
 urlpatterns = [
-    # Transaction CRUD
-    path('', TransactionListView.as_view(), name='transaction-list'),
-    path('transaction/add/', TransactionCreateView.as_view(), name='transaction-add'),
-    path('transaction/<int:pk>/edit/', TransactionUpdateView.as_view(), name='transaction-update'),
-    path('transaction/<int:pk>/delete/', TransactionDeleteView.as_view(), name='transaction-delete'),
-
-    # AJAX for dynamic selects
-    path('ajax/load-categories/', load_categories, name='ajax_load_categories'),
-    path('ajax/load-subcategories/', load_subcategories, name='ajax_load_subcategories'),
-
-    # Status management
-    path('status/add/', StatusCreateView.as_view(), name='status-add'),
-    path('status/<int:pk>/edit/', StatusUpdateView.as_view(), name='status-edit'),
-
-    # Type management
-    path('type/add/', TypeCreateView.as_view(), name='type-add'),
-    path('type/<int:pk>/edit/', TypeUpdateView.as_view(), name='type-edit'),
-
-    # Category management
-    path('category/add/', CategoryCreateView.as_view(), name='category-add'),
-    path('category/<int:pk>/edit/', CategoryUpdateView.as_view(), name='category-edit'),
-
-    # Subcategory management
-    path('subcategory/add/', SubcategoryCreateView.as_view(), name='subcategory-add'),
-    path('subcategory/<int:pk>/edit/', SubcategoryUpdateView.as_view(), name='subcategory-edit'),
+    path('', index, name='index'),
+    path('create/', ad_create, name='ad_create'),
+    path('edit/<int:pk>/', ad_update, name='ad_update'),
+    path('delete/<int:pk>/', ad_delete, name='ad_delete'),
+    path('proposal/', proposal_create, name='proposal_create'),  # здесь
+    path('api/', include(router.urls)),
 ]

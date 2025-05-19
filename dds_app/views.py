@@ -1,123 +1,149 @@
-# dds_app/views.py
-from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from django.http import JsonResponse
-from django.utils.dateparse import parse_date
-from django.db.models import Q
-from django.shortcuts import get_object_or_404, redirect
-from django.views.decorators.http import require_POST
+from django.conf import settings
+from django.shortcuts import render, redirect, get_object_or_404
+from django.core.paginator import Paginator
 from django.contrib import messages
-from django.db.models.deletion import ProtectedError
 
-from .models import Transaction, Status, Type, Category, Subcategory
-from .forms import TransactionForm
+from rest_framework import viewsets, permissions, status, filters
+from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 
-# --- Transactions CRUD ---
-class TransactionListView(ListView):
-    model = Transaction
-    template_name = 'transaction_list.html'
-    context_object_name = 'transactions'
-    paginate_by = 20
+from .models import Item, ExchangeProposal, Category
+from .serializers import ItemCreateSerializer, ExchangeProposalSerializer
+from .forms import ItemForm, ExchangeProposalForm
+from .permissions import IsOwnerOrReadOnly
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        q = Q()
-        df = self.request.GET.get('date_from')
-        dt = self.request.GET.get('date_to')
-        st = self.request.GET.get('status')
-        tp = self.request.GET.get('type')
-        cat = self.request.GET.get('category')
-        sub = self.request.GET.get('subcategory')
-        if df: q &= Q(date__gte=parse_date(df))
-        if dt: q &= Q(date__lte=parse_date(dt))
-        if st: q &= Q(status_id=st)
-        if tp: q &= Q(type_id=tp)
-        if cat: q &= Q(category_id=cat)
-        if sub: q &= Q(subcategory_id=sub)
-        return qs.filter(q)
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx['statuses'] = Status.objects.all()
-        ctx['types'] = Type.objects.all()
-        ctx['categories'] = Category.objects.all()
-        ctx['subcategories'] = Subcategory.objects.all()
-        return ctx
+def index(request):
+    qs = Item.objects.filter(is_active=True)
+    q = request.GET.get('q', '')
+    if q:
+        qs = qs.filter(title__icontains=q) | qs.filter(description__icontains=q)
+    cat = request.GET.get('category')
+    cond = request.GET.get('condition')
+    if cat:
+        qs = qs.filter(category_id=cat)
+    if cond:
+        qs = qs.filter(condition=cond)
+    from django.core.paginator import Paginator
+    paginator = Paginator(qs, 10)
+    page = request.GET.get('page')
+    items_page = paginator.get_page(page)
 
-class TransactionCreateView(CreateView):
-    model = Transaction
-    form_class = TransactionForm
-    template_name = 'transaction_form.html'
-    success_url = reverse_lazy('transaction-list')
+    categories = Category.objects.all()
+    return render(request, 'dds_app/index.html', {
+        'items': items_page,
+        'q': q,
+        'selected_cat': cat,
+        'selected_cond': cond,
+        'categories': categories,
+    })
 
-class TransactionUpdateView(UpdateView):
-    model = Transaction
-    form_class = TransactionForm
-    template_name = 'transaction_form.html'
-    success_url = reverse_lazy('transaction-list')
 
-class TransactionDeleteView(DeleteView):
-    model = Transaction
-    template_name = 'transaction_confirm_delete.html'
-    success_url = reverse_lazy('transaction-list')
+def ad_create(request):
+    if not request.user.is_authenticated:
+        return redirect(settings.LOGIN_URL)
+    if request.method == 'POST':
+        form = ItemForm(request.POST)
+        if form.is_valid():
+            ad = form.save(commit=False)
+            ad.owner = request.user
+            ad.save()
+            return render(request, 'dds_app/create_success.html', {'ad': ad})
+    else:
+        form = ItemForm()
+    return render(request, 'dds_app/ad_form.html', {'form': form})
 
-# --- AJAX handlers ---
-def load_categories(request):
-    t = request.GET.get('type')
-    qs = Category.objects.filter(type_id=t).order_by('name')
-    return JsonResponse(list(qs.values('id', 'name')), safe=False)
 
-def load_subcategories(request):
-    c = request.GET.get('category')
-    qs = Subcategory.objects.filter(category_id=c).order_by('name')
-    return JsonResponse(list(qs.values('id', 'name')), safe=False)
+def proposal_create(request):
+    if not request.user.is_authenticated:
+        return redirect(settings.LOGIN_URL)
+    if request.method == 'POST':
+        form = ExchangeProposalForm(request.POST)
+        if form.is_valid():
+            proposal = form.save()
+            return render(request, 'dds_app/proposal_success.html', {'proposal': proposal})
+    else:
+        form = ExchangeProposalForm()
+    return render(request, 'dds_app/proposal_form.html', {'form': form})
 
-# --- Reference management (Status, Type, Category, Subcategory) ---
 
-class StatusCreateView(CreateView):
-    model = Status
-    fields = ['name']
-    template_name = 'simple_form.html'
-    success_url = reverse_lazy('transaction-add')
+class ItemViewSet(viewsets.ModelViewSet):
+    queryset = Item.objects.filter(is_active=True)
+    serializer_class = ItemCreateSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
 
-class StatusUpdateView(UpdateView):
-    model = Status
-    fields = ['name']
-    template_name = 'simple_form.html'
-    success_url = reverse_lazy('transaction-add')
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ['title', 'description']
+    filterset_fields = ['category', 'condition']
 
-class TypeCreateView(CreateView):
-    model = Type
-    fields = ['name']
-    template_name = 'simple_form.html'
-    success_url = reverse_lazy('transaction-add')
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
-class TypeUpdateView(UpdateView):
-    model = Type
-    fields = ['name']
-    template_name = 'simple_form.html'
-    success_url = reverse_lazy('transaction-add')
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(
+            {'message': 'Объявление успешно создано', 'data': serializer.data},
+            status=status.HTTP_201_CREATED
+        )
 
-class CategoryCreateView(CreateView):
-    model = Category
-    fields = ['name', 'type']
-    template_name = 'simple_form.html'
-    success_url = reverse_lazy('transaction-add')
 
-class CategoryUpdateView(UpdateView):
-    model = Category
-    fields = ['name', 'type']
-    template_name = 'simple_form.html'
-    success_url = reverse_lazy('transaction-add')
+class ExchangeProposalViewSet(viewsets.ModelViewSet):
+    queryset = ExchangeProposal.objects.all()
+    serializer_class = ExchangeProposalSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-class SubcategoryCreateView(CreateView):
-    model = Subcategory
-    fields = ['name', 'category']
-    template_name = 'simple_form.html'
-    success_url = reverse_lazy('transaction-add')
+    def perform_create(self, serializer):
+        serializer.save()
 
-class SubcategoryUpdateView(UpdateView):
-    model = Subcategory
-    fields = ['name', 'category']
-    template_name = 'simple_form.html'
-    success_url = reverse_lazy('transaction-add')
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(
+            {'message': 'Предложение отправлено', 'data': serializer.data},
+            status=status.HTTP_201_CREATED
+        )
+
+
+def register(request):
+    if request.user.is_authenticated:
+        return redirect('index')
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('index')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/register.html', {'form': form})
+
+
+def ad_update(request, pk):
+    ad = get_object_or_404(Item, pk=pk)
+    if request.user != ad.owner:
+        messages.error(request, "Вы не можете редактировать это объявление.")
+        return redirect('index')
+    if request.method == 'POST':
+        form = ItemForm(request.POST, instance=ad)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Объявление обновлено.")
+            return redirect('index')
+    else:
+        form = ItemForm(instance=ad)
+    return render(request, 'dds_app/ad_form.html', {'form': form})
+
+
+def ad_delete(request, pk):
+    ad = get_object_or_404(Item, pk=pk)
+    if request.user != ad.owner:
+        messages.error(request, "Вы не можете удалить это объявление.")
+        return redirect('index')
+    if request.method == 'POST':
+        ad.delete()
+        messages.success(request, "Объявление удалено.")
+        return redirect('index')
+    return render(request, 'dds_app/ad_confirm_delete.html', {'ad': ad})

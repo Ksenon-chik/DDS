@@ -1,30 +1,21 @@
 from django.contrib import admin
-from .models import Status, Type, Category, Subcategory, Transaction
-
-
-@admin.register(Status)
-class StatusAdmin(admin.ModelAdmin): list_display = ('name',)
-
-
-@admin.register(Type)
-class TypeAdmin(admin.ModelAdmin): list_display = ('name',)
+from .models import Category, Item, ExchangeProposal
 
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'type')
-    list_filter = ('type',)
+    list_display = ('id', 'name')
 
 
-@admin.register(Subcategory)
-class SubcategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category')
-    list_filter = ('category',)
+@admin.register(Item)
+class ItemAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'owner', 'category', 'condition', 'created_at', 'is_active')
+    list_filter = ('category', 'condition', 'is_active')
+    search_fields = ('title', 'description', 'owner__username')
 
 
-@admin.register(Transaction)
-class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('date', 'status', 'type', 'category', 'subcategory', 'amount')
-    list_filter = ('status', 'type', 'category', 'subcategory')
-    search_fields = ('comment',)
-    date_hierarchy = 'date'
+@admin.register(ExchangeProposal)
+class ExchangeProposalAdmin(admin.ModelAdmin):
+    list_display = ('id', 'ad_sender', 'ad_receiver', 'status', 'created_at')
+    list_filter = ('status',)
+    search_fields = ('ad_sender__title', 'ad_receiver__title', 'comment')
