@@ -26,7 +26,7 @@ class ItemForm(forms.ModelForm):
 class ExchangeProposalForm(forms.ModelForm):
     class Meta:
         model = ExchangeProposal
-        fields = ['ad_sender', 'ad_receiver', 'comment']
+        fields = ['ad_sender', 'comment']
         widgets = {
             'ad_sender': forms.Select(attrs={'class': 'form-control'}),
             'ad_receiver': forms.Select(attrs={'class': 'form-control'}),

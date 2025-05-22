@@ -9,6 +9,7 @@ class ItemCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
 
     def create(self, validated_data):
+        validated_data.pop('owner', None)
         user = self.context['request'].user
         return Item.objects.create(owner=user, **validated_data)
 

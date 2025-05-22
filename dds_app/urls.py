@@ -22,9 +22,7 @@ urlpatterns = [
     path('edit/<int:pk>/', ad_update, name='ad_update'),
     path('delete/<int:pk>/', ad_delete, name='ad_delete'),
 
-    # создание предложения к конкретному объявлению
     path('proposal/create/<int:receiver_pk>/', proposal_create, name='proposal_create'),
-    # просмотр всех предложений
     path('proposal/', proposal_list, name='proposal_list'),
     # изменение статуса предложения
     path('proposal/<int:pk>/status/', proposal_update_status, name='proposal_update_status'),
