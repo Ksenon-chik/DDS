@@ -1,10 +1,11 @@
- {% extends 'base.html' %}
- {% block content %}
-   <h2>Создать объявление</h2>
-   <form method="post" class="mt-3">
-     {% csrf_token %}
--    <div class="mb-3">{{ form.image_url.label_tag }} {{ form.image_url }}</div>
-     {{ form.as_p }}
-     <button type="submit" class="btn btn-primary">Создать</button>
-   </form>
- {% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+  <h2>{% if is_update %}Редактировать объявление{% else %}Создать объявление{% endif %}</h2>
+  <form method="post" class="mt-3">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">
+      {% if is_update %}Сохранить{% else %}Создать{% endif %}
+    </button>
+  </form>
+{% endblock %}

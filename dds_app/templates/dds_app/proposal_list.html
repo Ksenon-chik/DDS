@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Мои предложения обмена</h2>
+
+  <div class="mb-4">
+    <a href="{% url 'index' %}" class="btn btn-secondary">Назад к объявлениям</a>
+  </div>
+
+  <form method="get" class="row mb-3">
+    <div class="col-md-4">
+      <select name="sender" class="form-control">
+        <option value="">Все мои объявления (отправитель)</option>
+        {% for ad in my_ads %}
+          <option value="{{ ad.id }}" {% if ad.id|stringformat:"s" == selected_sender %}selected{% endif %}>
+            От: {{ ad.title }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <select name="receiver" class="form-control">
+        <option value="">Все мои объявления (получатель)</option>
+        {% for ad in my_ads %}
+          <option value="{{ ad.id }}" {% if ad.id|stringformat:"s" == selected_receiver %}selected{% endif %}>
+            К: {{ ad.title }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <select name="status" class="form-control">
+        <option value="">Все статусы</option>
+        {% for code, label in proposal.STATUS_CHOICES %}
+          <option value="{{ code }}" {% if code == selected_status %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-1">
+      <button class="btn btn-primary w-100">OK</button>
+    </div>
+  </form>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>От (мои)</th>
+        <th>Кому</th>
+        <th>Комментарий</th>
+        <th>Статус</th>
+        <th>Дата</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for proposal in proposals %}
+        <tr>
+          <td>{{ proposal.id }}</td>
+          <td>{{ proposal.ad_sender.title }}</td>
+          <td>{{ proposal.ad_receiver.title }}</td>
+          <td>{{ proposal.comment }}</td>
+          <td>{{ proposal.get_status_display }}</td>
+          <td>{{ proposal.created_at|date:"Y-m-d H:i" }}</td>
+          <td>
+            {% if user == proposal.ad_receiver.owner and proposal.status == 'pending' %}
+              <form method="post" action="{% url 'proposal_update_status' proposal.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button name="status" value="accepted" class="btn btn-sm btn-success">Принять</button>
+              </form>
+              <form method="post" action="{% url 'proposal_update_status' proposal.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button name="status" value="rejected" class="btn btn-sm btn-danger">Отклонить</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="7" class="text-center">Нет предложений обмена.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

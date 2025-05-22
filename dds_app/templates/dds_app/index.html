@@ -1,8 +1,15 @@
 {% extends 'base.html' %}
 {% block content %}
-<form method="get" class="row mb-3" xmlns:c.id xmlns:c.id>
-    <div class="col"><input type="text" name="q" value="{{ q }}" placeholder="Поиск..." class="form-control"></div>
-    <div class="col">
+  <div class="mb-4">
+    <a href="{% url 'ad_create' %}" class="btn btn-success">Создать объявление</a>
+    <a href="{% url 'proposal_list' %}" class="btn btn-info">Мои предложения</a>
+  </div>
+
+  <form method="get" class="row mb-3">
+    <div class="col-md-4">
+      <input type="text" name="q" value="{{ q }}" placeholder="Поиск..." class="form-control">
+    </div>
+    <div class="col-md-3">
       <select name="category" class="form-control">
         <option value="">Все категории</option>
         {% for c in categories %}
@@ -10,28 +17,32 @@
         {% endfor %}
       </select>
     </div>
-    <div class="col">
-      <select name="condition" class="form-control">
-        <option value="">Все состояния</option>
-        <option value="new" {% if selected_cond == 'new' %}selected{% endif %}>Новый</option>
-        <option value="used" {% if selected_cond == 'used' %}selected{% endif %}>Б/У</option>
-      </select>
+    <div class="col-md-3">
+      <input type="text" name="condition" value="{{ selected_cond }}" placeholder="Состояние" class="form-control">
     </div>
-    <div class="col"><button type="submit" class="btn btn-primary">Применить</button></div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary w-100">Применить</button>
+    </div>
   </form>
 
   {% for item in items %}
-    <div class="card mb-2">
+    <div class="card mb-3">
       <div class="card-body">
-        <h5>{{ item.title }}</h5>
-        <p>{{ item.description }}</p>
-        <small>Категория: {{ item.category.name }}, Состояние: {{ item.condition }}</small>
-        {% if user == item.owner %}
-          <div class="mt-2">
+        <h5 class="card-title">{{ item.title }}</h5>
+        <p class="card-text">{{ item.description }}</p>
+        <small class="text-muted">
+          Пользователь: {{ item.owner.username }} |
+          Категория: {{ item.category.name }} |
+          Состояние: {{ item.condition }} |
+          Дата: {{ item.created_at|date:"Y-m-d H:i" }}
+        </small>
+        <div class="mt-2">
+          <a href="{% url 'proposal_create' item.pk %}" class="btn btn-sm btn-outline-primary">Предложить обмен</a>
+          {% if user == item.owner %}
             <a href="{% url 'ad_update' item.pk %}" class="btn btn-sm btn-outline-secondary">Редактировать</a>
             <a href="{% url 'ad_delete' item.pk %}" class="btn btn-sm btn-outline-danger">Удалить</a>
-          </div>
-        {% endif %}
+          {% endif %}
+        </div>
       </div>
     </div>
   {% empty %}
@@ -39,13 +50,19 @@
   {% endfor %}
 
   <nav aria-label="Page navigation">
-    <ul class="pagination">
+    <ul class="pagination justify-content-center">
       {% if items.has_previous %}
-        <li class="page-item"><a href="?page={{ items.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_cat %}&category={{ selected_cat }}{% endif %}{% if selected_cond %}&condition={{ selected_cond }}{% endif %}" class="page-link">«</a></li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ items.previous_page_number }}&q={{ q }}&category={{ selected_cat }}&condition={{ selected_cond }}">«</a>
+        </li>
       {% endif %}
-      <li class="page-item active"><span class="page-link">{{ items.number }} / {{ items.paginator.num_pages }}</span></li>
+      <li class="page-item disabled">
+        <span class="page-link">{{ items.number }} / {{ items.paginator.num_pages }}</span>
+      </li>
       {% if items.has_next %}
-        <li class="page-item"><a href="?page={{ items.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_cat %}&category={{ selected_cat }}{% endif %}{% if selected_cond %}&condition={{ selected_cond }}{% endif %}" class="page-link">»</a></li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ items.next_page_number }}&q={{ q }}&category={{ selected_cat }}&condition={{ selected_cond }}">»</a>
+        </li>
       {% endif %}
     </ul>
   </nav>

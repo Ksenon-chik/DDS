@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Предложение отправлено</h2>
+  <p>Ваше предложение:</p>
+  <ul>
+    <li>От: {{ proposal.ad_sender.title }}</li>
+    <li>К: {{ proposal.ad_receiver.title }}</li>
+    <li>Комментарий: {{ proposal.comment }}</li>
+    <li>Статус: {{ proposal.get_status_display }}</li>
+  </ul>
+  <a href="{% url 'proposal_list' %}">Посмотреть все предложения</a>
+{% endblock %}
